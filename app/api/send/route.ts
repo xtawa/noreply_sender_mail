@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import { marked } from 'marked';
 
 export async function POST(request: Request) {
     try {
@@ -29,8 +28,9 @@ export async function POST(request: Request) {
             },
         });
 
-        // Convert Markdown to HTML
-        const htmlContent = await marked.parse(content);
+
+        // Content is already HTML from rich text editor
+        const htmlContent = content;
 
         // Normalize recipients to array of objects
         let recipientList: any[] = [];

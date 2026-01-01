@@ -33,6 +33,10 @@
     - Converted send API to use Server-Sent Events (SSE) for streaming responses.
     - Frontend now displays each email's send status immediately after it's sent, instead of waiting for all emails to complete.
     - Users can see real-time progress in the Activity Log as emails are being sent.
+- Fixed email rendering issues:
+    - Added proper HTML email template with CSS styling.
+    - Emails now display correctly with white background, proper fonts, and clean formatting.
+    - Fixed layout issues that caused dark/white split screen rendering.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.
