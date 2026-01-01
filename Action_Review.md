@@ -47,6 +47,8 @@
     - Integrated OTP verification into the login flow.
     - Added UI for OTP input and verification.
     - Configured via `OTP_ENABLE` and `OTP_EMAIL` environment variables.
+    - Implemented stateless OTP verification using HMAC signed tokens to support Serverless environments (Vercel).
+    - Updated UI to be fully English.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.

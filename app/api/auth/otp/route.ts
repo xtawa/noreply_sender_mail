@@ -32,7 +32,14 @@ function verifyToken(token: string, inputOtp: string) {
 
 export async function POST(request: Request) {
     try {
-        const { email } = await request.json();
+        const { email, password } = await request.json();
+
+        // Verify password first
+        if (password !== process.env.ADMIN_PASSWORD) {
+            return NextResponse.json({
+                error: 'Invalid password'
+            }, { status: 401 });
+        }
 
         // Check if OTP is enabled
         if (process.env.OTP_ENABLE !== '1') {

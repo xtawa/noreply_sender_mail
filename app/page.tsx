@@ -72,8 +72,17 @@ export default function Home() {
             const res = await fetch('/api/auth/otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: 'admin' })
+                body: JSON.stringify({
+                    email: 'admin',
+                    password: password
+                })
             });
+
+            if (res.status === 401) {
+                alert('Invalid Password');
+                setSendingOtp(false);
+                return;
+            }
 
             const data = await res.json();
 
@@ -82,7 +91,7 @@ export default function Home() {
                 setOtpRequired(true);
                 setOtpEmail(data.otpEmail);
                 setOtpToken(data.token);
-                alert(`Verification code sent to ${data.otpEmail}`);
+                // Alert removed as requested
             } else {
                 // OTP is disabled, proceed with normal login
                 setIsAuthenticated(true);
@@ -90,9 +99,7 @@ export default function Home() {
             }
         } catch (error) {
             console.error('OTP error:', error);
-            // If OTP fails, allow normal login
-            setIsAuthenticated(true);
-            fetchTemplates();
+            alert('An error occurred during login');
         } finally {
             setSendingOtp(false);
         }
