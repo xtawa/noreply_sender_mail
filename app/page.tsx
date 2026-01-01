@@ -464,9 +464,36 @@ export default function Home() {
                                             Fetch {selectedRoles.length > 0 ? `for ${selectedRoles.length} roles` : ''}
                                         </button>
                                         {notionRecipients.length > 0 && (
-                                            <div style={{ marginTop: '10px', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <CheckCircle2 size={14} />
-                                                Loaded {notionRecipients.length} recipients
+                                            <div style={{ marginTop: '15px' }}>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
+                                                    <CheckCircle2 size={14} />
+                                                    Loaded {notionRecipients.length} recipients
+                                                </div>
+                                                <div style={{
+                                                    maxHeight: '200px',
+                                                    overflowY: 'auto',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '8px',
+                                                    background: 'var(--bg-element)'
+                                                }}>
+                                                    {notionRecipients.map((recipient, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            style={{
+                                                                padding: '8px 12px',
+                                                                borderBottom: idx < notionRecipients.length - 1 ? '1px solid var(--border)' : 'none',
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        >
+                                                            <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                                                                {recipient.name || 'No Name'}
+                                                            </div>
+                                                            <div style={{ color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                                {recipient.email}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
