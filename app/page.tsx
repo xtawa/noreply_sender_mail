@@ -1,20 +1,7 @@
-
-'use client';
-
-import { useState, useEffect } from 'react';
-import { marked } from 'marked';
-import {
-    Mail,
-    Send,
-    FileText,
-    Settings,
-    LogOut,
-    CheckCircle2,
-    XCircle,
-    Loader2,
-    Users,
-    Database
-} from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Mail, Users, Send, FileText, Settings, LogOut, Database, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import RichTextEditor from '../components/RichTextEditor';
+import 'react-quill/dist/quill.snow.css';
 
 interface Template {
     id?: string;
@@ -50,7 +37,7 @@ export default function Home() {
 
     const [sending, setSending] = useState(false);
     const [logs, setLogs] = useState<Log[]>([]);
-    const [previewHtml, setPreviewHtml] = useState('');
+
 
     // Notion State
     const [sourceMode, setSourceMode] = useState<'manual' | 'notion'>('manual');
@@ -175,13 +162,7 @@ export default function Home() {
         }
     }, [sourceMode]);
 
-    useEffect(() => {
-        const updatePreview = async () => {
-            const html = await marked.parse(content);
-            setPreviewHtml(html);
-        };
-        updatePreview();
-    }, [content]);
+
 
     const selectTemplate = (t: Template) => {
         setSelectedTemplate(t);
@@ -421,16 +402,11 @@ export default function Home() {
                             <Database size={18} />
                         </button>
                     </div>
-                    <div className="split-view">
-                        <textarea
-                            className="markdown-editor"
-                            placeholder="# Write your email content in Markdown..."
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px' }}>
+                        <RichTextEditor
                             value={content}
-                            onChange={e => setContent(e.target.value)}
+                            onChange={setContent}
                         />
-                        <div className="preview-pane">
-                            <div className="prose" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-                        </div>
                     </div>
                 </div>
 
