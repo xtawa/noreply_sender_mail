@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { Client } from '@notionhq/client';
 import { PageObjectResponse, PartialPageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
+const notion = new Client({
+    auth: process.env.NOTION_API_KEY,
+    notionVersion: '2022-06-28'
+});
 const databaseId = process.env.NOTION_TEMPLATE_DATABASE_ID;
 
 export async function GET() {
@@ -11,10 +14,12 @@ export async function GET() {
     }
 
     try {
-        // Cast to any to avoid type error if query is missing in definition
-        const response = await (notion.databases as any).query({
-            database_id: databaseId,
-        });
+        // Use notion.request to ensure compatibility
+        const response = await notion.request({
+            path: `databases/${databaseId}/query`,
+            method: 'post',
+            body: {},
+        }) as any;
 
         const templates = response.results.map((page: PageObjectResponse | PartialPageObjectResponse) => {
             if (!('properties' in page)) return null;
