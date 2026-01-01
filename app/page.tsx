@@ -63,10 +63,13 @@ export default function Home() {
     const [saveType, setSaveType] = useState('General');
     const [savingTemplate, setSavingTemplate] = useState(false);
 
-    const handleLogin = async () => {
-        if (!password) return;
+    // Remember Me State
+    const [rememberMe, setRememberMe] = useState(false);
 
-        // Check if OTP is enabled
+    const handleLogin = async (providedPassword?: string, providedSessionToken?: string) => {
+        const passToUse = providedPassword || password;
+        if (!passToUse && !providedSessionToken) return;
+
         try {
             setSendingOtp(true);
             const res = await fetch('/api/auth/otp', {
@@ -74,12 +77,13 @@ export default function Home() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: 'admin',
-                    password: password
+                    password: passToUse,
+                    sessionToken: providedSessionToken
                 })
             });
 
             if (res.status === 401) {
-                alert('Invalid Password');
+                if (!providedSessionToken) alert('Invalid Password');
                 setSendingOtp(false);
                 return;
             }
@@ -87,19 +91,25 @@ export default function Home() {
             const data = await res.json();
 
             if (data.otpRequired) {
-                // OTP is enabled, show OTP input
                 setOtpRequired(true);
                 setOtpEmail(data.otpEmail);
                 setOtpToken(data.token);
-                // Alert removed as requested
             } else {
-                // OTP is disabled, proceed with normal login
+                // Success
                 setIsAuthenticated(true);
+                if (passToUse) setPassword(passToUse);
+
+                // If direct login (OTP disabled), handle remember me
+                if (rememberMe && passToUse) {
+                    localStorage.setItem('admin_password', passToUse);
+                    localStorage.setItem('remember_me', 'true');
+                }
+
                 fetchTemplates();
             }
         } catch (error) {
             console.error('OTP error:', error);
-            alert('An error occurred during login');
+            if (!providedSessionToken) alert('An error occurred during login');
         } finally {
             setSendingOtp(false);
         }
@@ -127,6 +137,14 @@ export default function Home() {
 
             if (data.valid) {
                 setIsAuthenticated(true);
+
+                // Handle remember me
+                if (rememberMe) {
+                    localStorage.setItem('admin_password', password);
+                    localStorage.setItem('session_token', data.sessionToken);
+                    localStorage.setItem('remember_me', 'true');
+                }
+
                 fetchTemplates();
             } else {
                 alert(data.error || 'Invalid code');
@@ -139,6 +157,18 @@ export default function Home() {
             setVerifyingOtp(false);
         }
     };
+
+    // Auto-login on mount
+    useEffect(() => {
+        const savedPassword = localStorage.getItem('admin_password');
+        const savedSessionToken = localStorage.getItem('session_token');
+        const isRemembered = localStorage.getItem('remember_me') === 'true';
+
+        if (isRemembered && (savedPassword || savedSessionToken)) {
+            if (savedPassword) setPassword(savedPassword);
+            handleLogin(savedPassword || undefined, savedSessionToken || undefined);
+        }
+    }, []);
 
     const fetchTemplates = async () => {
         try {
@@ -388,11 +418,21 @@ export default function Home() {
                             </div>
                             <button
                                 className="btn-primary"
-                                onClick={handleLogin}
+                                onClick={() => handleLogin()}
                                 disabled={sendingOtp}
                             >
                                 {sendingOtp ? 'Sending OTP...' : 'Access Dashboard'}
                             </button>
+                            <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                <input
+                                    type="checkbox"
+                                    id="rememberMe"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label htmlFor="rememberMe" style={{ cursor: 'pointer' }}>Remember me for 3 days</label>
+                            </div>
                         </>
                     ) : (
                         <>
@@ -423,6 +463,16 @@ export default function Home() {
                             >
                                 {verifyingOtp ? 'Verifying...' : 'Verify Code'}
                             </button>
+                            <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', justifyContent: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    id="rememberMeOtp"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label htmlFor="rememberMeOtp" style={{ cursor: 'pointer' }}>Remember me for 3 days</label>
+                            </div>
                             <button
                                 className="btn-ghost"
                                 onClick={() => {
@@ -439,6 +489,14 @@ export default function Home() {
             </div>
         );
     }
+
+    const handleLogout = () => {
+        localStorage.removeItem('admin_password');
+        localStorage.removeItem('session_token');
+        localStorage.removeItem('remember_me');
+        setIsAuthenticated(false);
+        setPassword('');
+    };
 
     return (
         <div className="app-container">
@@ -474,7 +532,7 @@ export default function Home() {
                     <Mail size={20} />
                     <span>NoreplySender</span>
                 </div>
-                <button className="btn-ghost" onClick={() => setIsAuthenticated(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button className="btn-ghost" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <LogOut size={16} />
                     Logout
                 </button>

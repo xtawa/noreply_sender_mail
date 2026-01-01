@@ -30,11 +30,43 @@ function verifyToken(token: string, inputOtp: string) {
     return { valid: true, email };
 }
 
+function signSessionToken(email: string) {
+    const expires = Date.now() + 3 * 24 * 60 * 60 * 1000; // 3 days
+    const data = `${email}:${expires}`;
+    const signature = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+    return `${data}:${signature}`;
+}
+
+function verifySessionToken(token: string) {
+    if (!token) return false;
+    try {
+        const parts = token.split(':');
+        if (parts.length !== 3) return false;
+        const [email, expiresStr, signature] = parts;
+        const expires = parseInt(expiresStr);
+        if (Date.now() > expires) return false;
+        const expectedSignature = crypto.createHmac('sha256', SECRET)
+            .update(`${email}:${expires}`)
+            .digest('hex');
+        return signature === expectedSignature;
+    } catch (e) {
+        return false;
+    }
+}
+
 export async function POST(request: Request) {
     try {
-        const { email, password } = await request.json();
+        const { email, password, sessionToken } = await request.json();
 
-        // Verify password first
+        // Check session token first (Remember Me)
+        if (sessionToken && verifySessionToken(sessionToken)) {
+            return NextResponse.json({
+                otpRequired: false,
+                message: 'Session verified'
+            });
+        }
+
+        // Verify password
         if (password !== process.env.ADMIN_PASSWORD) {
             return NextResponse.json({
                 error: 'Invalid password'
@@ -135,9 +167,13 @@ export async function PUT(request: Request) {
             return NextResponse.json(result, { status: 400 });
         }
 
+        // Generate session token for "Remember Me"
+        const sessionToken = signSessionToken(email);
+
         return NextResponse.json({
             valid: true,
-            message: 'OTP verified successfully'
+            message: 'OTP verified successfully',
+            sessionToken
         });
 
     } catch (error: any) {
