@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mail, Users, Send, FileText, Settings, LogOut, Database, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import RichTextEditor from '../components/RichTextEditor';
-import 'react-quill/dist/quill.snow.css';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface Template {
     id?: string;
