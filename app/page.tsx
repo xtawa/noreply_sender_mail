@@ -226,8 +226,6 @@ export default function Home() {
                 })
             });
 
-            const data = await res.json();
-
             if (res.status === 401) {
                 alert('Invalid Password');
                 setIsAuthenticated(false);
@@ -235,18 +233,69 @@ export default function Home() {
                 return;
             }
 
-            if (data.results) {
-                const newLogs = data.results.map((r: any) => ({
-                    ...r,
-                    timestamp: new Date().toLocaleTimeString()
-                }));
-                setLogs(prev => [...newLogs, ...prev]);
+            if (!res.ok) {
+                const data = await res.json();
+                alert('Error: ' + (data.error || 'Failed to send emails'));
+                setSending(false);
+                return;
+            }
+
+            // Check if response is Server-Sent Events
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('text/event-stream')) {
+                // Handle streaming response
+                const reader = res.body?.getReader();
+                const decoder = new TextDecoder();
+
+                if (!reader) {
+                    setSending(false);
+                    return;
+                }
+
+                let buffer = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.done) {
+                                setSending(false);
+                            } else {
+                                // Add log entry in real-time
+                                const newLog: Log = {
+                                    email: data.email,
+                                    status: data.status,
+                                    error: data.error,
+                                    timestamp: new Date(data.timestamp).toLocaleTimeString()
+                                };
+                                setLogs(prev => [newLog, ...prev]);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Fallback for non-streaming response (shouldn't happen with new API)
+                const data = await res.json();
+                if (data.results) {
+                    const newLogs = data.results.map((r: any) => ({
+                        ...r,
+                        timestamp: new Date().toLocaleTimeString()
+                    }));
+                    setLogs(prev => [...newLogs, ...prev]);
+                }
+                setSending(false);
             }
 
         } catch (e) {
             console.error(e);
             alert('Error sending emails');
-        } finally {
             setSending(false);
         }
     };

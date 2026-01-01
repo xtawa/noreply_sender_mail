@@ -24,6 +24,11 @@
     - Fixed type mismatch for `DatabaseObjectResponse` in `app/api/notion/roles/route.ts` by casting to `any`.
     - Enhanced `app/api/notion/roles/route.ts` and `app/api/notion/recipients/route.ts` to support `role`, `Role`, and `Roles` property names dynamically.
     - Added detailed error logging in `app/api/notion/roles/route.ts` to help diagnose missing properties or incorrect Database IDs.
+    - Fixed missing `properties` field issue by specifying Notion API version `2022-06-28` in Client initialization.
+    - Applied same fixes to `app/api/notion/templates/route.ts` to ensure Notion templates load correctly.
+- Added recipient list display feature:
+    - After fetching recipients from Notion, the UI now displays a scrollable list showing each recipient's name and email address.
+    - The list is styled with a clean card design and supports up to 200px height with scroll.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.
