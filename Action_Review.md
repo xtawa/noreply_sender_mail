@@ -29,6 +29,10 @@
 - Added recipient list display feature:
     - After fetching recipients from Notion, the UI now displays a scrollable list showing each recipient's name and email address.
     - The list is styled with a clean card design and supports up to 200px height with scroll.
+- Implemented real-time email sending progress:
+    - Converted send API to use Server-Sent Events (SSE) for streaming responses.
+    - Frontend now displays each email's send status immediately after it's sent, instead of waiting for all emails to complete.
+    - Users can see real-time progress in the Activity Log as emails are being sent.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.
