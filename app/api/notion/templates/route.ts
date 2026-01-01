@@ -54,6 +54,11 @@ export async function GET() {
                 return '';
             };
 
+            const getPlainText = (p: any) => {
+                if (p.type === 'rich_text') return p.rich_text.map((t: any) => t.plain_text).join('');
+                return '';
+            };
+
             const getSelect = (p: any) => {
                 if (p.type === 'select') return p.select?.name || '';
                 return '';
@@ -68,7 +73,7 @@ export async function GET() {
             for (const [key, prop] of Object.entries(props)) {
                 const lowerKey = key.toLowerCase();
                 if (prop.type === 'title') name = getName(prop);
-                else if (lowerKey === 'subject') subject = getText(prop);
+                else if (lowerKey === 'subject') subject = getPlainText(prop);
                 else if (lowerKey === 'body' || lowerKey === 'content') body = getText(prop);
                 else if (lowerKey === 'type') type = getSelect(prop);
             }

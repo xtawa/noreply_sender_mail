@@ -53,6 +53,8 @@
     - Improved UX by removing unnecessary alerts during login flow.
     - Replaced `react-quill` with `react-quill-new` to resolve React 19 compatibility issues (`findDOMNode` error).
     - Improved Notion template fetching to convert rich text annotations (bold, italic, etc.) and newlines into HTML for the editor.
+    - Fixed editor layout to ensure internal scrolling and prevent page-level overflow, keeping the subject line visible.
+    - Resolved TypeScript build error in Notion templates API.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.
