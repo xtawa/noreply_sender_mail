@@ -42,6 +42,11 @@
     - Created reusable RichTextEditor component with full formatting toolbar.
     - Modified send API to handle HTML content directly instead of Markdown.
     - Users can now format emails with bold, italic, colors, lists, links, images, etc.
+- Implemented Two-Factor Authentication (OTP):
+    - Created backend API for generating and verifying OTP codes.
+    - Integrated OTP verification into the login flow.
+    - Added UI for OTP input and verification.
+    - Configured via `OTP_ENABLE` and `OTP_EMAIL` environment variables.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.

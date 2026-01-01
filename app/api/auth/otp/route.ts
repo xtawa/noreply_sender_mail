@@ -1,8 +1,34 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
-// Store OTP codes temporarily (in production, use Redis or similar)
-const otpStore = new Map<string, { code: string; expires: number }>();
+const SECRET = process.env.ADMIN_PASSWORD || 'default-secret-key';
+
+function signOtp(email: string, otp: string, expires: number) {
+    const data = `${email}:${otp}:${expires}`;
+    const signature = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+    return `${data}:${signature}`; // email:otp:expires:signature
+}
+
+function verifyToken(token: string, inputOtp: string) {
+    if (!token) return { valid: false, error: 'Missing token' };
+    const parts = token.split(':');
+    if (parts.length !== 4) return { valid: false, error: 'Invalid token format' };
+
+    const [email, otp, expiresStr, signature] = parts;
+    const expires = parseInt(expiresStr);
+
+    if (Date.now() > expires) return { valid: false, error: 'OTP expired' };
+    if (otp !== inputOtp) return { valid: false, error: 'Invalid OTP' };
+
+    const expectedSignature = crypto.createHmac('sha256', SECRET)
+        .update(`${email}:${otp}:${expires}`)
+        .digest('hex');
+
+    if (signature !== expectedSignature) return { valid: false, error: 'Invalid token signature' };
+
+    return { valid: true, email };
+}
 
 export async function POST(request: Request) {
     try {
@@ -26,12 +52,10 @@ export async function POST(request: Request) {
 
         // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
 
-        // Store OTP with 5-minute expiration
-        otpStore.set(email, {
-            code: otp,
-            expires: Date.now() + 5 * 60 * 1000
-        });
+        // Create signed token
+        const token = signOtp(email, otp, expires);
 
         // Send OTP email
         const transporter = nodemailer.createTransport({
@@ -59,14 +83,14 @@ export async function POST(request: Request) {
 </head>
 <body>
     <div class="container">
-        <h2>登录验证码</h2>
-        <p>您正在登录 NoreplySender 邮件发送系统。</p>
+        <h2>Login Verification</h2>
+        <p>You are logging into NoreplySender.</p>
         <div class="otp-box">
-            <p>您的验证码是:</p>
+            <p>Your verification code is:</p>
             <div class="otp-code">${otp}</div>
         </div>
-        <p>此验证码将在 <strong>5分钟</strong> 后失效。</p>
-        <p class="warning">⚠️ 如果这不是您的操作,请忽略此邮件。</p>
+        <p>This code expires in <strong>5 minutes</strong>.</p>
+        <p class="warning">⚠️ If you did not request this, please ignore this email.</p>
     </div>
 </body>
 </html>`;
@@ -74,14 +98,15 @@ export async function POST(request: Request) {
         await transporter.sendMail({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: otpEmail,
-            subject: '登录验证码 - NoreplySender',
+            subject: 'Login Verification - NoreplySender',
             html: emailHtml,
         });
 
         return NextResponse.json({
             otpRequired: true,
             message: 'OTP sent successfully',
-            otpEmail: otpEmail.replace(/(.{2}).*(@.*)/, '$1***$2') // Mask email
+            otpEmail: otpEmail.replace(/(.{2}).*(@.*)/, '$1***$2'), // Mask email
+            token: token
         });
 
     } catch (error: any) {
@@ -95,34 +120,13 @@ export async function POST(request: Request) {
 // Verify OTP
 export async function PUT(request: Request) {
     try {
-        const { email, otp } = await request.json();
+        const { email, otp, token } = await request.json();
 
-        const stored = otpStore.get(email);
+        const result = verifyToken(token, otp);
 
-        if (!stored) {
-            return NextResponse.json({
-                valid: false,
-                error: 'OTP not found or expired'
-            }, { status: 400 });
+        if (!result.valid) {
+            return NextResponse.json(result, { status: 400 });
         }
-
-        if (Date.now() > stored.expires) {
-            otpStore.delete(email);
-            return NextResponse.json({
-                valid: false,
-                error: 'OTP expired'
-            }, { status: 400 });
-        }
-
-        if (stored.code !== otp) {
-            return NextResponse.json({
-                valid: false,
-                error: 'Invalid OTP'
-            }, { status: 400 });
-        }
-
-        // OTP is valid, remove it
-        otpStore.delete(email);
 
         return NextResponse.json({
             valid: true,

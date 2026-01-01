@@ -44,6 +44,7 @@ export default function Home() {
     const [otpRequired, setOtpRequired] = useState(false);
     const [otpCode, setOtpCode] = useState('');
     const [otpEmail, setOtpEmail] = useState('');
+    const [otpToken, setOtpToken] = useState('');
     const [sendingOtp, setSendingOtp] = useState(false);
     const [verifyingOtp, setVerifyingOtp] = useState(false);
 
@@ -80,7 +81,8 @@ export default function Home() {
                 // OTP is enabled, show OTP input
                 setOtpRequired(true);
                 setOtpEmail(data.otpEmail);
-                alert(`验证码已发送到 ${data.otpEmail}`);
+                setOtpToken(data.token);
+                alert(`Verification code sent to ${data.otpEmail}`);
             } else {
                 // OTP is disabled, proceed with normal login
                 setIsAuthenticated(true);
@@ -98,7 +100,7 @@ export default function Home() {
 
     const handleVerifyOtp = async () => {
         if (!otpCode || otpCode.length !== 6) {
-            alert('请输入6位验证码');
+            alert('Please enter a 6-digit code');
             return;
         }
 
@@ -109,7 +111,8 @@ export default function Home() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: 'admin',
-                    otp: otpCode
+                    otp: otpCode,
+                    token: otpToken
                 })
             });
 
@@ -119,12 +122,12 @@ export default function Home() {
                 setIsAuthenticated(true);
                 fetchTemplates();
             } else {
-                alert(data.error || '验证码错误');
+                alert(data.error || 'Invalid code');
                 setOtpCode('');
             }
         } catch (error) {
             console.error('Verify error:', error);
-            alert('验证失败,请重试');
+            alert('Verification failed, please try again');
         } finally {
             setVerifyingOtp(false);
         }
@@ -232,8 +235,6 @@ export default function Home() {
             fetchNotionRoles();
         }
     }, [sourceMode]);
-
-
 
     const selectTemplate = (t: Template) => {
         setSelectedTemplate(t);
@@ -363,7 +364,7 @@ export default function Home() {
                     </div>
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Welcome Back</h1>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '30px', fontSize: '0.9rem' }}>
-                        {otpRequired ? '请输入验证码' : 'Enter your admin password to access the dashboard'}
+                        {otpRequired ? 'Please enter verification code' : 'Enter your admin password to access the dashboard'}
                     </p>
 
                     {!otpRequired ? (
@@ -389,12 +390,12 @@ export default function Home() {
                     ) : (
                         <>
                             <div style={{ marginBottom: '20px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                验证码已发送到: <strong>{otpEmail}</strong>
+                                Verification code sent to: <strong>{otpEmail}</strong>
                             </div>
                             <div className="input-group">
                                 <input
                                     type="text"
-                                    placeholder="6位验证码"
+                                    placeholder="6-digit code"
                                     className="text-input"
                                     value={otpCode}
                                     onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
