@@ -15,6 +15,15 @@ export async function GET() {
 
         // Type guard or cast
         const fullResponse = response as any;
+
+        if (!fullResponse.properties) {
+            console.error('Database response missing properties:', JSON.stringify(fullResponse));
+            return NextResponse.json({
+                error: 'Invalid Notion response: missing properties',
+                debug: fullResponse
+            }, { status: 500 });
+        }
+
         const properties = fullResponse.properties;
 
         // Look for 'role', 'Role', or 'Roles' property
