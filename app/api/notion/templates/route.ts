@@ -31,7 +31,26 @@ export async function GET() {
             };
 
             const getText = (p: any) => {
-                if (p.type === 'rich_text') return p.rich_text.map((t: any) => t.plain_text).join('');
+                if (p.type === 'rich_text') {
+                    const html = p.rich_text.map((t: any) => {
+                        let text = t.text.content;
+
+                        if (t.annotations.bold) text = `<strong>${text}</strong>`;
+                        if (t.annotations.italic) text = `<em>${text}</em>`;
+                        if (t.annotations.underline) text = `<u>${text}</u>`;
+                        if (t.annotations.strikethrough) text = `<strike>${text}</strike>`;
+                        if (t.annotations.code) text = `<code>${text}</code>`;
+                        if (t.annotations.color && t.annotations.color !== 'default') {
+                            text = `<span style="color: ${t.annotations.color}">${text}</span>`;
+                        }
+                        if (t.href) text = `<a href="${t.href}">${text}</a>`;
+
+                        return text;
+                    }).join('');
+
+                    // Convert newlines to paragraphs for better Quill compatibility
+                    return html.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '<p><br></p>').join('');
+                }
                 return '';
             };
 
@@ -79,6 +98,14 @@ export async function POST(request: Request) {
     try {
         const { name, subject, body, type } = await request.json();
 
+        // Strip HTML tags for Notion storage to keep it clean
+        const plainBody = body
+            .replace(/<\/p><p>/g, '\n')
+            .replace(/<p>/g, '')
+            .replace(/<\/p>/g, '')
+            .replace(/<br\s*\/?>/g, '\n')
+            .replace(/<[^>]+>/g, '');
+
         await notion.pages.create({
             parent: { database_id: databaseId },
             properties: {
@@ -104,7 +131,7 @@ export async function POST(request: Request) {
                     rich_text: [
                         {
                             text: {
-                                content: body,
+                                content: plainBody,
                             },
                         },
                     ],
