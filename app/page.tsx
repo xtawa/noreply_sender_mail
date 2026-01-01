@@ -38,6 +38,13 @@ export default function Home() {
     const [sending, setSending] = useState(false);
     const [logs, setLogs] = useState<Log[]>([]);
 
+    // OTP State
+    const [otpRequired, setOtpRequired] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [otpEmail, setOtpEmail] = useState('');
+    const [sendingOtp, setSendingOtp] = useState(false);
+    const [verifyingOtp, setVerifyingOtp] = useState(false);
+
 
     // Notion State
     const [sourceMode, setSourceMode] = useState<'manual' | 'notion'>('manual');
@@ -55,8 +62,70 @@ export default function Home() {
 
     const handleLogin = async () => {
         if (!password) return;
-        setIsAuthenticated(true);
-        fetchTemplates();
+
+        // Check if OTP is enabled
+        try {
+            setSendingOtp(true);
+            const res = await fetch('/api/auth/otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'admin' })
+            });
+
+            const data = await res.json();
+
+            if (data.otpRequired) {
+                // OTP is enabled, show OTP input
+                setOtpRequired(true);
+                setOtpEmail(data.otpEmail);
+                alert(`验证码已发送到 ${data.otpEmail}`);
+            } else {
+                // OTP is disabled, proceed with normal login
+                setIsAuthenticated(true);
+                fetchTemplates();
+            }
+        } catch (error) {
+            console.error('OTP error:', error);
+            // If OTP fails, allow normal login
+            setIsAuthenticated(true);
+            fetchTemplates();
+        } finally {
+            setSendingOtp(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!otpCode || otpCode.length !== 6) {
+            alert('请输入6位验证码');
+            return;
+        }
+
+        setVerifyingOtp(true);
+        try {
+            const res = await fetch('/api/auth/otp', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: 'admin',
+                    otp: otpCode
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.valid) {
+                setIsAuthenticated(true);
+                fetchTemplates();
+            } else {
+                alert(data.error || '验证码错误');
+                setOtpCode('');
+            }
+        } catch (error) {
+            console.error('Verify error:', error);
+            alert('验证失败,请重试');
+        } finally {
+            setVerifyingOtp(false);
+        }
     };
 
     const fetchTemplates = async () => {
@@ -292,21 +361,70 @@ export default function Home() {
                     </div>
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Welcome Back</h1>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '30px', fontSize: '0.9rem' }}>
-                        Enter your admin password to access the dashboard
+                        {otpRequired ? '请输入验证码' : 'Enter your admin password to access the dashboard'}
                     </p>
-                    <div className="input-group">
-                        <input
-                            type="password"
-                            placeholder="Admin Password"
-                            className="text-input"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                        />
-                    </div>
-                    <button className="btn-primary" onClick={handleLogin}>
-                        Access Dashboard
-                    </button>
+
+                    {!otpRequired ? (
+                        <>
+                            <div className="input-group">
+                                <input
+                                    type="password"
+                                    placeholder="Admin Password"
+                                    className="text-input"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                                />
+                            </div>
+                            <button
+                                className="btn-primary"
+                                onClick={handleLogin}
+                                disabled={sendingOtp}
+                            >
+                                {sendingOtp ? 'Sending OTP...' : 'Access Dashboard'}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <div style={{ marginBottom: '20px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                验证码已发送到: <strong>{otpEmail}</strong>
+                            </div>
+                            <div className="input-group">
+                                <input
+                                    type="text"
+                                    placeholder="6位验证码"
+                                    className="text-input"
+                                    value={otpCode}
+                                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
+                                    maxLength={6}
+                                    style={{
+                                        textAlign: 'center',
+                                        fontSize: '1.5rem',
+                                        letterSpacing: '8px',
+                                        fontWeight: 'bold'
+                                    }}
+                                />
+                            </div>
+                            <button
+                                className="btn-primary"
+                                onClick={handleVerifyOtp}
+                                disabled={verifyingOtp || otpCode.length !== 6}
+                            >
+                                {verifyingOtp ? 'Verifying...' : 'Verify Code'}
+                            </button>
+                            <button
+                                className="btn-ghost"
+                                onClick={() => {
+                                    setOtpRequired(false);
+                                    setOtpCode('');
+                                }}
+                                style={{ marginTop: '10px', width: '100%' }}
+                            >
+                                Back
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         );
