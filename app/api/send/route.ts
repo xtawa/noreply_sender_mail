@@ -76,11 +76,37 @@ export async function POST(request: Request) {
                     }
 
                     try {
+                        // Wrap HTML with email-friendly template
+                        const emailHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; }
+        .email-container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2, h3, h4, h5, h6 { color: #2c3e50; margin-top: 20px; margin-bottom: 10px; }
+        p { margin: 10px 0; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        ul, ol { padding-left: 20px; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        pre { background-color: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        blockquote { border-left: 4px solid #3498db; margin: 10px 0; padding-left: 15px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        ${personalizedHtml}
+    </div>
+</body>
+</html>`;
+
                         await transporter.sendMail({
                             from: process.env.SMTP_FROM || process.env.SMTP_USER,
                             to: email,
                             subject: subject,
-                            html: personalizedHtml,
+                            html: emailHtml,
                         });
 
                         // Send success event
