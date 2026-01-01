@@ -3,7 +3,10 @@ import { Client } from '@notionhq/client';
 import { DatabaseObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 
 export async function GET() {
-    const notion = new Client({ auth: process.env.NOTION_API_KEY });
+    const notion = new Client({
+        auth: process.env.NOTION_API_KEY,
+        notionVersion: '2022-06-28'  // Specify a stable API version
+    });
     const databaseId = process.env.NOTION_DATABASE_ID;
 
     if (!process.env.NOTION_API_KEY || !databaseId) {
