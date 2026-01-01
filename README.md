@@ -14,6 +14,18 @@ To run this project, you need to configure the following environment variables i
 | `SMTP_PASS` | The password for your SMTP server. | `your_password` |
 | `ADMIN_PASSWORD` | The password to access the dashboard and send emails. | `secure_admin_password` |
 | `SMTP_FROM` | (Optional) The email address to send from. Defaults to `SMTP_USER`. | `noreply@example.com` |
+| `NOTION_API_KEY` | The integration token for Notion API. | `secret_...` |
+| `NOTION_DATABASE_ID` | The ID of the Notion database containing recipients. | `32-char-id` |
+| `NOTION_TEMPLATE_DATABASE_ID` | The ID of the Notion database for saving/loading templates. | `32-char-id` |
+
+## Notion Setup
+
+1. Create a Notion Integration at [https://www.notion.so/my-integrations](https://www.notion.so/my-integrations).
+2. Share your database with the integration.
+3. Ensure your database has the following properties:
+    - **role** (Multi-select or Select): Defines the user roles.
+    - **mail** or **Email** (Email): The recipient's email address.
+    - **Name** (Title): The recipient's name.
 
 ## Getting Started
 
@@ -35,6 +47,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - **Template Management**: Reads markdown templates from the `/templete` directory.
 - **Bulk Sending**: Supports sending emails to multiple recipients.
+- **Notion Integration**: Fetch recipients directly from a Notion database based on roles.
 - **Markdown Support**: Templates are written in Markdown and converted to HTML.
 - **Secure Access**: Protected by an admin password.
 

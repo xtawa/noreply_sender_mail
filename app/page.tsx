@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,14 +12,17 @@ import {
     CheckCircle2,
     XCircle,
     Loader2,
-    LayoutTemplate,
-    Users
+    Users,
+    Database
 } from 'lucide-react';
 
 interface Template {
+    id?: string;
     filename: string;
     subject: string;
     body: string;
+    source?: 'local' | 'notion';
+    type?: string;
 }
 
 interface Log {
@@ -26,6 +30,12 @@ interface Log {
     status: 'sent' | 'failed';
     error?: string;
     timestamp: string;
+}
+
+interface NotionOption {
+    id: string;
+    name: string;
+    color: string;
 }
 
 export default function Home() {
@@ -42,6 +52,20 @@ export default function Home() {
     const [logs, setLogs] = useState<Log[]>([]);
     const [previewHtml, setPreviewHtml] = useState('');
 
+    // Notion State
+    const [sourceMode, setSourceMode] = useState<'manual' | 'notion'>('manual');
+    const [notionRoles, setNotionRoles] = useState<NotionOption[]>([]);
+    const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+    const [loadingRoles, setLoadingRoles] = useState(false);
+    const [fetchingRecipients, setFetchingRecipients] = useState(false);
+    const [notionRecipients, setNotionRecipients] = useState<any[]>([]);
+
+    // Save Template State
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [saveName, setSaveName] = useState('');
+    const [saveType, setSaveType] = useState('General');
+    const [savingTemplate, setSavingTemplate] = useState(false);
+
     const handleLogin = async () => {
         if (!password) return;
         setIsAuthenticated(true);
@@ -50,13 +74,92 @@ export default function Home() {
 
     const fetchTemplates = async () => {
         try {
-            const res = await fetch('/api/templates');
-            const data = await res.json();
-            if (data.templates) {
-                setTemplates(data.templates);
+            // Fetch Local
+            const resLocal = await fetch('/api/templates');
+            const dataLocal = await resLocal.json();
+            const localTemplates = dataLocal.templates?.map((t: any) => ({ ...t, source: 'local' })) || [];
+
+            // Fetch Notion
+            const resNotion = await fetch('/api/notion/templates');
+            const dataNotion = await resNotion.json();
+            const notionTemplates = dataNotion.templates || [];
+
+            setTemplates([...localTemplates, ...notionTemplates]);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleSaveTemplate = async () => {
+        if (!saveName || !subject || !content) return;
+        setSavingTemplate(true);
+        try {
+            const res = await fetch('/api/notion/templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: saveName,
+                    subject,
+                    body: content,
+                    type: saveType
+                })
+            });
+
+            if (res.ok) {
+                setShowSaveModal(false);
+                setSaveName('');
+                fetchTemplates(); // Refresh list
+                alert('Template saved to Notion!');
+            } else {
+                const data = await res.json();
+                alert('Error: ' + data.error);
             }
         } catch (e) {
             console.error(e);
+            alert('Failed to save template');
+        } finally {
+            setSavingTemplate(false);
+        }
+    };
+
+    const fetchNotionRoles = async () => {
+        setLoadingRoles(true);
+        try {
+            const res = await fetch('/api/notion/roles');
+            const data = await res.json();
+            if (data.options) {
+                setNotionRoles(data.options);
+            } else if (data.error) {
+                alert('Notion Error: ' + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to fetch Notion roles');
+        } finally {
+            setLoadingRoles(false);
+        }
+    };
+
+    const handleFetchRecipients = async () => {
+        if (selectedRoles.length === 0) return;
+        setFetchingRecipients(true);
+        try {
+            const res = await fetch('/api/notion/recipients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roles: selectedRoles })
+            });
+            const data = await res.json();
+            if (data.recipients) {
+                setNotionRecipients(data.recipients);
+            } else if (data.error) {
+                alert('Notion Error: ' + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to fetch recipients');
+        } finally {
+            setFetchingRecipients(false);
         }
     };
 
@@ -65,6 +168,12 @@ export default function Home() {
             fetchTemplates();
         }
     }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (sourceMode === 'notion' && notionRoles.length === 0) {
+            fetchNotionRoles();
+        }
+    }, [sourceMode]);
 
     useEffect(() => {
         const updatePreview = async () => {
@@ -80,16 +189,37 @@ export default function Home() {
         setContent(t.body);
     };
 
+    const toggleRole = (roleName: string) => {
+        setSelectedRoles(prev =>
+            prev.includes(roleName)
+                ? prev.filter(r => r !== roleName)
+                : [...prev, roleName]
+        );
+    };
+
     const handleSend = async () => {
         setSending(true);
-        const recipientList = recipients.split('\n').filter(r => r.trim());
+
+        let payloadRecipients: any = [];
+
+        if (sourceMode === 'manual') {
+            payloadRecipients = recipients.split('\n').filter(r => r.trim());
+        } else {
+            payloadRecipients = notionRecipients;
+        }
+
+        if (payloadRecipients.length === 0) {
+            alert('No recipients selected');
+            setSending(false);
+            return;
+        }
 
         try {
             const res = await fetch('/api/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    recipients: recipientList,
+                    recipients: payloadRecipients,
                     subject,
                     content,
                     password
@@ -154,6 +284,32 @@ export default function Home() {
 
     return (
         <div className="app-container">
+            {/* Save Modal */}
+            {showSaveModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div className="glass-panel" style={{ background: 'var(--bg-panel)', padding: '24px', width: '400px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                        <h3 style={{ marginBottom: '16px' }}>Save to Notion</h3>
+                        <div className="input-group">
+                            <label className="input-label">Template Name</label>
+                            <input className="text-input" value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="e.g. Monthly Newsletter" />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Type (Config)</label>
+                            <input className="text-input" value={saveType} onChange={e => setSaveType(e.target.value)} placeholder="e.g. Marketing" />
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                            <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setShowSaveModal(false)}>Cancel</button>
+                            <button className="btn-primary" style={{ flex: 1 }} onClick={handleSaveTemplate} disabled={savingTemplate}>
+                                {savingTemplate ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <header className="header">
                 <div className="logo">
@@ -169,18 +325,22 @@ export default function Home() {
             <div className="main-layout">
                 {/* Sidebar */}
                 <div className="sidebar">
-                    <div className="sidebar-header">Templates</div>
+                    <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Templates</span>
+                        <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>Local & Notion</span>
+                    </div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {templates.map(t => (
                             <div
-                                key={t.filename}
-                                className={`nav-item ${selectedTemplate?.filename === t.filename ? 'active' : ''}`}
+                                key={t.id || t.filename}
+                                className={`nav-item ${selectedTemplate?.id === t.id || selectedTemplate?.filename === t.filename ? 'active' : ''}`}
                                 onClick={() => selectTemplate(t)}
                             >
-                                <FileText size={16} />
-                                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {t.source === 'notion' ? <Database size={14} color="var(--primary)" /> : <FileText size={14} />}
+                                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                                     {t.filename.replace('.md', '')}
                                 </div>
+                                {t.type && <span style={{ fontSize: '0.6rem', background: 'var(--bg-element)', padding: '2px 4px', borderRadius: '4px' }}>{t.type}</span>}
                             </div>
                         ))}
                         {templates.length === 0 && (
@@ -200,13 +360,17 @@ export default function Home() {
 
                 {/* Editor */}
                 <div className="editor-container">
-                    <div className="editor-toolbar">
+                    <div className="editor-toolbar" style={{ justifyContent: 'space-between' }}>
                         <input
                             className="subject-input"
                             placeholder="Subject Line..."
                             value={subject}
                             onChange={e => setSubject(e.target.value)}
+                            style={{ flex: 1 }}
                         />
+                        <button className="btn-ghost" onClick={() => setShowSaveModal(true)} title="Save to Notion">
+                            <Database size={18} />
+                        </button>
                     </div>
                     <div className="split-view">
                         <textarea
@@ -224,26 +388,98 @@ export default function Home() {
                 {/* Right Panel */}
                 <div className="config-panel">
                     <div className="panel-section">
-                        <div className="panel-title">
-                            <Users size={16} />
-                            Recipients
+                        <div className="panel-title" style={{ justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Users size={16} />
+                                Recipients
+                            </div>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                                <button
+                                    className={`btn-ghost ${sourceMode === 'manual' ? 'active' : ''}`}
+                                    style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                                    onClick={() => setSourceMode('manual')}
+                                >
+                                    Manual
+                                </button>
+                                <button
+                                    className={`btn-ghost ${sourceMode === 'notion' ? 'active' : ''}`}
+                                    style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                                    onClick={() => setSourceMode('notion')}
+                                >
+                                    Notion
+                                </button>
+                            </div>
                         </div>
-                        <textarea
-                            className="recipients-input"
-                            placeholder="user@example.com&#10;user2@example.com, Name"
-                            value={recipients}
-                            onChange={e => setRecipients(e.target.value)}
-                        />
-                        <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            One recipient per line. Format: email or email, name
-                        </div>
+
+                        {sourceMode === 'manual' ? (
+                            <>
+                                <textarea
+                                    className="recipients-input"
+                                    placeholder="user@example.com&#10;user2@example.com, Name"
+                                    value={recipients}
+                                    onChange={e => setRecipients(e.target.value)}
+                                />
+                                <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    One recipient per line. Format: email or email, name
+                                </div>
+                            </>
+                        ) : (
+                            <div style={{ minHeight: '150px' }}>
+                                {loadingRoles ? (
+                                    <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+                                        <Loader2 className="animate-spin" />
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '5px' }}>
+                                            Select Roles to Fetch:
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {notionRoles.map(role => (
+                                                <div
+                                                    key={role.id}
+                                                    onClick={() => toggleRole(role.name)}
+                                                    style={{
+                                                        padding: '4px 10px',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.75rem',
+                                                        cursor: 'pointer',
+                                                        border: `1px solid ${selectedRoles.includes(role.name) ? 'var(--primary)' : 'var(--border)'}`,
+                                                        background: selectedRoles.includes(role.name) ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                                        color: selectedRoles.includes(role.name) ? 'var(--primary)' : 'var(--text-secondary)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {role.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            className="btn-primary"
+                                            style={{ marginTop: '15px' }}
+                                            onClick={handleFetchRecipients}
+                                            disabled={fetchingRecipients || selectedRoles.length === 0}
+                                        >
+                                            {fetchingRecipients ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
+                                            Fetch {selectedRoles.length > 0 ? `for ${selectedRoles.length} roles` : ''}
+                                        </button>
+                                        {notionRecipients.length > 0 && (
+                                            <div style={{ marginTop: '10px', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <CheckCircle2 size={14} />
+                                                Loaded {notionRecipients.length} recipients
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="panel-section">
                         <button
                             className="btn-primary"
                             onClick={handleSend}
-                            disabled={sending || !recipients.trim() || !subject.trim()}
+                            disabled={sending || (!recipients.trim() && notionRecipients.length === 0) || !subject.trim()}
                         >
                             {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                             {sending ? 'Sending...' : 'Send Emails'}

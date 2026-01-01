@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@notionhq/client": "^5.6.0",
     "@types/nodemailer": "^7.0.4",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.562.0",
