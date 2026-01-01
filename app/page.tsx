@@ -2,6 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
+import {
+    Mail,
+    Send,
+    FileText,
+    Settings,
+    LogOut,
+    CheckCircle2,
+    XCircle,
+    Loader2,
+    LayoutTemplate,
+    Users
+} from 'lucide-react';
 
 interface Template {
     filename: string;
@@ -30,15 +42,8 @@ export default function Home() {
     const [logs, setLogs] = useState<Log[]>([]);
     const [previewHtml, setPreviewHtml] = useState('');
 
-    // Login handler (just saves password to state and tries to fetch templates to verify)
     const handleLogin = async () => {
         if (!password) return;
-        // We can try to fetch templates. If it works, we assume auth is okay for now, 
-        // but actually templates API is public in my implementation (oops, I should protect it or just assume it's fine).
-        // The user requirement said "login background access password". 
-        // I'll assume the password is for SENDING. But maybe for viewing too?
-        // Let's just set isAuthenticated = true and let the send API fail if wrong.
-        // Or better, I'll add a verify endpoint or just use the password for everything.
         setIsAuthenticated(true);
         fetchTemplates();
     };
@@ -62,7 +67,6 @@ export default function Home() {
     }, [isAuthenticated]);
 
     useEffect(() => {
-        // Update preview when content changes
         const updatePreview = async () => {
             const html = await marked.parse(content);
             setPreviewHtml(html);
@@ -119,98 +123,156 @@ export default function Home() {
 
     if (!isAuthenticated) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '20px' }}>
-                <div className="glass-panel" style={{ padding: '40px', width: '400px', textAlign: 'center' }}>
-                    <h1 style={{ marginBottom: '30px', background: 'linear-gradient(to right, #8b5cf6, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Noreply Sender</h1>
-                    <input
-                        type="password"
-                        placeholder="Enter Admin Password"
-                        className="input-field"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                        style={{ marginBottom: '20px' }}
-                    />
-                    <button className="btn" style={{ width: '100%' }} onClick={handleLogin}>Access Dashboard</button>
+            <div className="login-screen">
+                <div className="login-card">
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '12px', borderRadius: '12px' }}>
+                            <Mail size={32} color="#6366f1" />
+                        </div>
+                    </div>
+                    <h1 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Welcome Back</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '30px', fontSize: '0.9rem' }}>
+                        Enter your admin password to access the dashboard
+                    </p>
+                    <div className="input-group">
+                        <input
+                            type="password"
+                            placeholder="Admin Password"
+                            className="text-input"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                        />
+                    </div>
+                    <button className="btn-primary" onClick={handleLogin}>
+                        Access Dashboard
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="container">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ background: 'linear-gradient(to right, #8b5cf6, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>Noreply Sender</h2>
-                <button onClick={() => setIsAuthenticated(false)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-color)', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Logout</button>
+        <div className="app-container">
+            {/* Header */}
+            <header className="header">
+                <div className="logo">
+                    <Mail size={20} />
+                    <span>NoreplySender</span>
+                </div>
+                <button className="btn-ghost" onClick={() => setIsAuthenticated(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <LogOut size={16} />
+                    Logout
+                </button>
             </header>
 
-            <div className="grid-layout">
-                {/* Sidebar: Templates */}
-                <div className="glass-panel sidebar" style={{ padding: '15px' }}>
-                    <h3 style={{ margin: '0 0 15px 0', fontSize: '14px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>Templates</h3>
-                    {templates.map(t => (
-                        <div
-                            key={t.filename}
-                            className={`template-item ${selectedTemplate?.filename === t.filename ? 'active' : ''}`}
-                            onClick={() => selectTemplate(t)}
-                        >
-                            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{t.filename}</div>
-                            <div style={{ fontSize: '12px', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.subject}</div>
-                        </div>
-                    ))}
-                    {templates.length === 0 && <div style={{ opacity: 0.5, fontSize: '13px' }}>No templates found in /templete</div>}
-                </div>
-
-                {/* Middle: Editor */}
-                <div className="glass-panel editor-area" style={{ padding: '20px' }}>
-                    <input
-                        className="input-field"
-                        placeholder="Email Subject"
-                        value={subject}
-                        onChange={e => setSubject(e.target.value)}
-                    />
-                    <div style={{ display: 'flex', gap: '10px', height: '100%' }}>
-                        <textarea
-                            className="input-field"
-                            style={{ resize: 'none', fontFamily: 'monospace', flex: 1 }}
-                            placeholder="Markdown Content..."
-                            value={content}
-                            onChange={e => setContent(e.target.value)}
-                        />
-                        <div className="preview-area" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            <div className="main-layout">
+                {/* Sidebar */}
+                <div className="sidebar">
+                    <div className="sidebar-header">Templates</div>
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                        {templates.map(t => (
+                            <div
+                                key={t.filename}
+                                className={`nav-item ${selectedTemplate?.filename === t.filename ? 'active' : ''}`}
+                                onClick={() => selectTemplate(t)}
+                            >
+                                <FileText size={16} />
+                                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {t.filename.replace('.md', '')}
+                                </div>
+                            </div>
+                        ))}
+                        {templates.length === 0 && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                                No templates found
+                            </div>
+                        )}
+                    </div>
+                    <div className="sidebar-header" style={{ borderTop: '1px solid var(--border)' }}>
+                        <Settings size={14} style={{ display: 'inline', marginRight: '5px' }} />
+                        Configuration
+                    </div>
+                    <div style={{ padding: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        SMTP Host: {process.env.NEXT_PUBLIC_SMTP_HOST || 'Configured in env'}
                     </div>
                 </div>
 
-                {/* Right: Sending & Logs */}
-                <div className="glass-panel" style={{ padding: '15px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <h3 style={{ margin: '0', fontSize: '14px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>Recipients</h3>
-                    <textarea
-                        className="input-field"
-                        style={{ height: '150px', resize: 'vertical' }}
-                        placeholder="Enter emails (one per line)&#10;user@example.com&#10;user2@example.com, Name"
-                        value={recipients}
-                        onChange={e => setRecipients(e.target.value)}
-                    />
+                {/* Editor */}
+                <div className="editor-container">
+                    <div className="editor-toolbar">
+                        <input
+                            className="subject-input"
+                            placeholder="Subject Line..."
+                            value={subject}
+                            onChange={e => setSubject(e.target.value)}
+                        />
+                    </div>
+                    <div className="split-view">
+                        <textarea
+                            className="markdown-editor"
+                            placeholder="# Write your email content in Markdown..."
+                            value={content}
+                            onChange={e => setContent(e.target.value)}
+                        />
+                        <div className="preview-pane">
+                            <div className="prose" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                        </div>
+                    </div>
+                </div>
 
-                    <button
-                        className="btn"
-                        onClick={handleSend}
-                        disabled={sending || !recipients.trim() || !subject.trim()}
-                    >
-                        {sending ? 'Sending...' : 'Send Emails'}
-                    </button>
+                {/* Right Panel */}
+                <div className="config-panel">
+                    <div className="panel-section">
+                        <div className="panel-title">
+                            <Users size={16} />
+                            Recipients
+                        </div>
+                        <textarea
+                            className="recipients-input"
+                            placeholder="user@example.com&#10;user2@example.com, Name"
+                            value={recipients}
+                            onChange={e => setRecipients(e.target.value)}
+                        />
+                        <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            One recipient per line. Format: email or email, name
+                        </div>
+                    </div>
 
-                    <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                        <h4 style={{ margin: '0 0 10px 0', fontSize: '12px' }}>Activity Log</h4>
-                        {logs.map((log, i) => (
-                            <div key={i} className={`log-item ${log.status}`}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{log.email}</span>
-                                    <span>{log.status}</span>
+                    <div className="panel-section">
+                        <button
+                            className="btn-primary"
+                            onClick={handleSend}
+                            disabled={sending || !recipients.trim() || !subject.trim()}
+                        >
+                            {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                            {sending ? 'Sending...' : 'Send Emails'}
+                        </button>
+                    </div>
+
+                    <div className="panel-section" style={{ borderBottom: 'none', flex: 1, display: 'flex', flexDirection: 'column', padding: 0 }}>
+                        <div className="panel-title" style={{ padding: '24px 24px 0 24px' }}>
+                            Activity Log
+                        </div>
+                        <div className="logs-container" style={{ marginTop: '16px' }}>
+                            {logs.length === 0 && (
+                                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '20px' }}>
+                                    No activity yet
                                 </div>
-                                {log.error && <div style={{ fontSize: '10px', opacity: 0.8 }}>{log.error}</div>}
-                            </div>
-                        ))}
+                            )}
+                            {logs.map((log, i) => (
+                                <div key={i} className="log-entry">
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <span style={{ fontWeight: 500 }}>{log.email}</span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{log.timestamp}</span>
+                                    </div>
+                                    <div className={`status-badge ${log.status === 'sent' ? 'status-sent' : 'status-failed'}`}>
+                                        {log.status === 'sent' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                        <span style={{ marginLeft: '4px' }}>{log.status}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

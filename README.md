@@ -1,4 +1,19 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Noreply Sender Mail
+
+This is a [Next.js](https://nextjs.org) project designed to send noreply emails using templates.
+
+## Environment Variables
+
+To run this project, you need to configure the following environment variables in your `.env.local` file (for local development) or in your Vercel project settings.
+
+| Variable | Description | Example |
+| :--- | :--- | :--- |
+| `SMTP_HOST` | The hostname of your SMTP server. | `smtp.example.com` |
+| `SMTP_PORT` | The port of your SMTP server. | `465` (SSL) or `587` (TLS) |
+| `SMTP_USER` | The username for your SMTP server. | `user@example.com` |
+| `SMTP_PASS` | The password for your SMTP server. | `your_password` |
+| `ADMIN_PASSWORD` | The password to access the dashboard and send emails. | `secure_admin_password` |
+| `SMTP_FROM` | (Optional) The email address to send from. Defaults to `SMTP_USER`. | `noreply@example.com` |
 
 ## Getting Started
 
@@ -16,18 +31,12 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Template Management**: Reads markdown templates from the `/templete` directory.
+- **Bulk Sending**: Supports sending emails to multiple recipients.
+- **Markdown Support**: Templates are written in Markdown and converted to HTML.
+- **Secure Access**: Protected by an admin password.
 
 ## Deploy on Vercel
 
