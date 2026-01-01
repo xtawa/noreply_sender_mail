@@ -49,7 +49,7 @@ export async function GET() {
                     }).join('');
 
                     // Convert newlines to paragraphs for better Quill compatibility
-                    return html.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '<p><br></p>').join('');
+                    return html.split('\n').map((line: string) => line.trim() ? `<p>${line}</p>` : '<p><br></p>').join('');
                 }
                 return '';
             };

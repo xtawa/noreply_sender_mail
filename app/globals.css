@@ -140,6 +140,7 @@ h6 {
   font-size: 1.25rem;
   font-weight: 700;
   background: linear-gradient(135deg, #818cf8, #c084fc);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
@@ -201,6 +202,7 @@ h6 {
   flex-direction: column;
   background: var(--bg-app);
   position: relative;
+  overflow: hidden;
 }
 
 .editor-toolbar {
@@ -226,33 +228,41 @@ h6 {
   opacity: 0.3;
 }
 
-.split-view {
-  display: flex;
+/* Quill Customization */
+.ql-container.ql-snow {
+  border: none !important;
   flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-.markdown-editor {
+.ql-editor {
   flex: 1;
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--border);
-  padding: 24px;
+  overflow-y: auto !important;
+  padding: 24px !important;
   color: var(--text-primary);
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.6;
-  resize: none;
-  outline: none;
 }
 
-.preview-pane {
-  flex: 1;
-  padding: 32px;
-  background: white;
-  /* Email previews are usually white */
-  color: #1a1a1a;
-  overflow-y: auto;
+.ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  background: var(--bg-app);
+  padding: 8px 16px !important;
+}
+
+.ql-snow .ql-stroke {
+  stroke: var(--text-secondary) !important;
+}
+
+.ql-snow .ql-fill {
+  fill: var(--text-secondary) !important;
+}
+
+.ql-snow .ql-picker {
+  color: var(--text-secondary) !important;
 }
 
 /* Right Panel */

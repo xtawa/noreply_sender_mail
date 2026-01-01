@@ -52,6 +52,7 @@
     - Enhanced security by verifying password before sending OTP.
     - Improved UX by removing unnecessary alerts during login flow.
     - Replaced `react-quill` with `react-quill-new` to resolve React 19 compatibility issues (`findDOMNode` error).
+    - Improved Notion template fetching to convert rich text annotations (bold, italic, etc.) and newlines into HTML for the editor.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.
