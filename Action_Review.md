@@ -22,6 +22,8 @@
     - Workaround for missing `notion.databases.query` method by using `notion.request`.
     - Fixed implicit `any` type error in `app/api/notion/recipients/route.ts`.
     - Fixed type mismatch for `DatabaseObjectResponse` in `app/api/notion/roles/route.ts` by casting to `any`.
+    - Enhanced `app/api/notion/roles/route.ts` and `app/api/notion/recipients/route.ts` to support `role`, `Role`, and `Roles` property names dynamically.
+    - Added detailed error logging in `app/api/notion/roles/route.ts` to help diagnose missing properties or incorrect Database IDs.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.

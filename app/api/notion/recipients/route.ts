@@ -17,9 +17,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ recipients: [] });
         }
 
+        // First, retrieve the database to find the correct 'role' property name
+        const dbResponse = await notion.databases.retrieve({ database_id: databaseId }) as any;
+        const properties = dbResponse.properties;
+        const rolePropertyName = properties['role'] ? 'role' : (properties['Role'] ? 'Role' : (properties['Roles'] ? 'Roles' : null));
+
+        if (!rolePropertyName) {
+            return NextResponse.json({ error: 'Property "role" (or Role, Roles) not found in database' }, { status: 404 });
+        }
+
         const filter = {
             or: roles.map((role: string) => ({
-                property: 'role',
+                property: rolePropertyName,
                 multi_select: {
                     contains: role,
                 },

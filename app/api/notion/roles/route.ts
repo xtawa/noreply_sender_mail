@@ -17,11 +17,21 @@ export async function GET() {
         const fullResponse = response as any;
         const properties = fullResponse.properties;
 
-        // Look for 'role' or 'Role' property
-        const roleProperty = properties['role'] || properties['Role'];
+        // Look for 'role', 'Role', or 'Roles' property
+        const roleProperty = properties['role'] || properties['Role'] || properties['Roles'];
 
         if (!roleProperty) {
-            return NextResponse.json({ error: 'Property "role" not found in database' }, { status: 404 });
+            const availableKeys = Object.keys(properties).join(', ');
+            console.error(`Property "role" not found. Available properties: ${availableKeys}`);
+
+            let hint = '';
+            if (availableKeys.includes('Type') && availableKeys.includes('Subject')) {
+                hint = ' (It looks like you might be using the Template Database ID instead of the Recipient Database ID)';
+            }
+
+            return NextResponse.json({
+                error: `Property "role" not found in database. Available properties: ${availableKeys}.${hint}`
+            }, { status: 404 });
         }
 
         if (roleProperty.type !== 'multi_select' && roleProperty.type !== 'select') {
