@@ -14,7 +14,7 @@ export async function GET() {
         const response = await notion.databases.retrieve({ database_id: databaseId });
 
         // Type guard or cast
-        const fullResponse = response as DatabaseObjectResponse;
+        const fullResponse = response as any;
         const properties = fullResponse.properties;
 
         // Look for 'role' or 'Role' property

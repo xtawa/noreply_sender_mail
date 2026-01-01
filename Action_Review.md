@@ -18,6 +18,11 @@
     - Updated Frontend to display merged list of Local and Notion templates.
     - Added "Save to Notion" functionality in the editor with Name and Type (Config) inputs.
 - Updated `README.md` with environment variable documentation including Notion keys.
+- Fixed Vercel build errors:
+    - Workaround for missing `notion.databases.query` method by using `notion.request`.
+    - Fixed implicit `any` type error in `app/api/notion/recipients/route.ts`.
+    - Fixed type mismatch for `DatabaseObjectResponse` in `app/api/notion/roles/route.ts` by casting to `any`.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.
+    - Deploy to Vercel and verify production build.

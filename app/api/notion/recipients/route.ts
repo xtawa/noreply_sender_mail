@@ -26,12 +26,16 @@ export async function POST(request: Request) {
             })),
         };
 
-        const response = await notion.databases.query({
-            database_id: databaseId,
-            filter: filter as any,
-        });
+        // Workaround: notion.databases.query seems to be missing in the installed version/types
+        const response = await notion.request({
+            path: `databases/${databaseId}/query`,
+            method: 'post',
+            body: {
+                filter: filter,
+            },
+        }) as any;
 
-        const recipients = response.results.map((page) => {
+        const recipients = response.results.map((page: any) => {
             if (!('properties' in page)) return null;
 
             const props = (page as PageObjectResponse).properties;
