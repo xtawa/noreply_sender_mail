@@ -11,7 +11,12 @@ export async function GET() {
     }
 
     try {
-        const response = await notion.databases.retrieve({ database_id: databaseId });
+        // Workaround: notion.databases.retrieve might be returning a simplified object or hitting an issue with the client version.
+        // Using notion.request to ensure we get the full database object.
+        const response = await notion.request({
+            path: `databases/${databaseId}`,
+            method: 'get',
+        });
 
         // Type guard or cast
         const fullResponse = response as any;
