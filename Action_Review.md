@@ -37,6 +37,11 @@
     - Added proper HTML email template with CSS styling.
     - Emails now display correctly with white background, proper fonts, and clean formatting.
     - Fixed layout issues that caused dark/white split screen rendering.
+- Added rich text editor support:
+    - Installed and integrated React Quill rich text editor.
+    - Created reusable RichTextEditor component with full formatting toolbar.
+    - Modified send API to handle HTML content directly instead of Markdown.
+    - Users can now format emails with bold, italic, colors, lists, links, images, etc.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.

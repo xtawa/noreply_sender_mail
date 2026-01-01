@@ -17,6 +17,8 @@ To run this project, you need to configure the following environment variables i
 | `NOTION_API_KEY` | The integration token for Notion API. | `secret_...` |
 | `NOTION_DATABASE_ID` | The ID of the Notion database containing recipients. | `32-char-id` |
 | `NOTION_TEMPLATE_DATABASE_ID` | The ID of the Notion database for saving/loading templates. | `32-char-id` |
+| `OTP_ENABLE` | Enable/disable two-factor authentication. `1` = enabled, `0` = disabled. | `1` |
+| `OTP_EMAIL` | The email address to receive OTP verification codes. | `admin@example.com` |
 
 ## Notion Setup
 
@@ -46,9 +48,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Features
 
 - **Template Management**: Reads markdown templates from the `/templete` directory.
+- **Rich Text Editor**: WYSIWYG editor for composing emails with formatting.
 - **Bulk Sending**: Supports sending emails to multiple recipients.
+- **Real-time Progress**: See email sending status in real-time with Server-Sent Events.
 - **Notion Integration**: Fetch recipients directly from a Notion database based on roles.
-- **Markdown Support**: Templates are written in Markdown and converted to HTML.
+- **Two-Factor Authentication**: Optional OTP verification for enhanced security.
 - **Secure Access**: Protected by an admin password.
 
 ## Deploy on Vercel
