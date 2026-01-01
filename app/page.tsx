@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { Mail, Users, Send, FileText, Settings, LogOut, Database, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import RichTextEditor from '../components/RichTextEditor';
