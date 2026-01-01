@@ -55,6 +55,7 @@
     - Improved Notion template fetching to convert rich text annotations (bold, italic, etc.) and newlines into HTML for the editor.
     - Fixed editor layout to ensure internal scrolling and prevent page-level overflow, keeping the subject line visible.
     - Resolved TypeScript build error in Notion templates API.
+    - Implemented "Remember me for 3 days" feature using signed session tokens and localStorage.
 - Next Steps:
     - Verify email sending functionality with dynamic properties.
     - Verify Notion template saving and loading.

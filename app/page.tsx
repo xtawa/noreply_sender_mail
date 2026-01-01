@@ -565,12 +565,14 @@ export default function Home() {
                             </div>
                         )}
                     </div>
-                    <div className="sidebar-header" style={{ borderTop: '1px solid var(--border)' }}>
-                        <Settings size={14} style={{ display: 'inline', marginRight: '5px' }} />
-                        Configuration
-                    </div>
-                    <div style={{ padding: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        SMTP Host: {process.env.NEXT_PUBLIC_SMTP_HOST || 'Configured in env'}
+                    <div style={{ borderTop: '1px solid var(--border)', marginTop: 'auto', padding: '8px 0' }}>
+                        <div
+                            className="nav-item"
+                            onClick={() => window.open('https://team.zcwww.cc', '_blank')}
+                        >
+                            <Users size={14} />
+                            <span>Creators</span>
+                        </div>
                     </div>
                 </div>
 
